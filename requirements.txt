@@ -6,3 +6,5 @@ redis>=5.2,<7.0
 dj-database-url>=2.3,<3.0
 psycopg[binary]>=3.2,<4.0
 django-storages[s3]>=1.14,<2.0
+dj-database-url
+psycopg[binary]
