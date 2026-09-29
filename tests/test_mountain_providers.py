@@ -51,6 +51,15 @@ class MountainProviderTests(SimpleTestCase):
 
         self.assertTrue(form.is_valid(), form.errors)
 
+    @override_settings(MOUNTAIN_SEARCH_URL="https://nominatim.test/search")
+    @patch("mountains.services.cache.add", return_value=True)
+    @patch("mountains.services.urlopen", side_effect=[BytesIO(b"[]"), BytesIO(b"[]")])
+    def test_empty_search_results_are_not_cached(self, urlopen, _cache_add):
+        self.assertEqual(search_mountains("Unknown hiking place", "en"), [])
+        self.assertEqual(search_mountains("Unknown hiking place", "en"), [])
+
+        self.assertEqual(urlopen.call_count, 2)
+
     @override_settings(OVERPASS_API_URL="https://overpass.test/api/interpreter")
     @patch("mountains.services.urlopen")
     def test_trails_use_real_overpass_relation_geometry(self, urlopen):

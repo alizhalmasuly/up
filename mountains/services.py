@@ -45,7 +45,7 @@ def search_mountains(query, language="en"):
     if len(query) < 3:
         return []
 
-    cache_key = "map-place-search:" + hashlib.sha256(f"{language}:{query.casefold()}".encode()).hexdigest()
+    cache_key = "map-place-search:v2:" + hashlib.sha256(f"{language}:{query.casefold()}".encode()).hexdigest()
     cached = cache.get(cache_key)
     if cached is not None:
         return cached
@@ -99,7 +99,10 @@ def search_mountains(query, language="en"):
             "source": "OpenStreetMap",
         })
 
-    cache.set(cache_key, results, timeout=60 * 60)
+    # Cache successful matches only. A temporary provider miss should not
+    # make a place appear unavailable for the full hour on subsequent tries.
+    if results:
+        cache.set(cache_key, results, timeout=60 * 60)
     return results
 
 
