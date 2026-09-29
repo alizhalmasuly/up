@@ -55,7 +55,7 @@ Copy `.env.example` to `.env`. Keep real secrets out of source control.
 - `DEBUG`: use `False` in production and configure production hosts, HTTPS, static files and a production database before deploying.
 - `AI_API_KEY`: optional bearer API key for an OpenAI-compatible chat-completions endpoint. Without it, the assistant gives deterministic local recommendations in the selected language.
 - `AI_API_URL`: optional chat-completions endpoint; defaults to the OpenAI API URL.
-- `AI_MODEL`: optional model name; defaults to `gpt-4o-mini`.
+- `AI_MODEL`: optional model name; defaults to `gpt-6-luna`.
 - `WEATHER_API_KEY`: OpenWeather API key. Without it, the weather component clearly reports that live conditions are unavailable; it does not display sample weather.
 - `WEATHER_API_URL` / `WEATHER_FORECAST_API_URL`: optional OpenWeather endpoint overrides.
 - `MOUNTAIN_SEARCH_URL`: Nominatim-compatible global peak search endpoint. Public Nominatim requires no API key.

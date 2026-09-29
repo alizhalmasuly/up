@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db import models
 
-from mountains.models import Mountain, difficulty_label
+from mountains.models import Mountain, difficulty_label, optimize_photo_url
 
 
 class Story(models.Model):
@@ -29,7 +29,8 @@ class Story(models.Model):
 
     @property
     def image(self):
-        return self.cover.url if self.cover else (self.cover_url or (self.mountain.image_url if self.mountain else ""))
+        image_url = self.cover.url if self.cover else (self.cover_url or (self.mountain.image_url if self.mountain else ""))
+        return optimize_photo_url(image_url)
 
 
 class Comment(models.Model):

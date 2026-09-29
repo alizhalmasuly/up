@@ -29,7 +29,7 @@ def recommend_gear(message, mountain="", season="summer", duration="5", difficul
     api_key = os.getenv("AI_API_KEY", "").strip()
     if api_key:
         endpoint = os.getenv("AI_API_URL", "https://api.openai.com/v1/chat/completions")
-        model = os.getenv("AI_MODEL", "gpt-4o-mini")
+        model = os.getenv("AI_MODEL", "gpt-6-luna")
         language_names = {"ru": "Russian", "kk": "Kazakh", "en": "English"}
         payload = {
             "model": model,
@@ -37,8 +37,11 @@ def recommend_gear(message, mountain="", season="summer", duration="5", difficul
                 {"role": "system", "content": f"You are a cautious mountain hiking gear assistant. Reply in {language_names.get(language, 'Russian')}. Give concise, practical advice based on route, season, duration, difficulty and the user's existing kit. Mention checking local forecasts and never imply safety is guaranteed."},
                 {"role": "user", "content": f"Route: {mountain or 'not specified'}; season: {season}; duration: {duration}; difficulty: {difficulty}; current weather context: {weather_context}. Existing gear: {message}"},
             ],
-            "temperature": 0.4,
         }
+        if model.startswith("gpt-6-"):
+            payload["reasoning_effort"] = "low"
+        else:
+            payload["temperature"] = 0.4
         request = Request(endpoint, data=json.dumps(payload).encode(), headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"})
         try:
             with urlopen(request, timeout=15) as response:

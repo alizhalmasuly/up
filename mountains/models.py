@@ -1,6 +1,21 @@
 from django.conf import settings
 from django.db import models
 from django.utils.translation import get_language
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+
+def optimize_photo_url(url, width=1200):
+    """Request a right-sized, modern image variant from Unsplash."""
+    if not url:
+        return url
+
+    parts = urlsplit(url)
+    if parts.hostname != "images.unsplash.com":
+        return url
+
+    query = dict(parse_qsl(parts.query, keep_blank_values=True))
+    query.update({"auto": "format", "fit": "crop", "w": str(width), "q": "75"})
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
 
 
 def difficulty_label(value):
@@ -65,6 +80,10 @@ class Mountain(models.Model):
 
     def get_difficulty_display(self):
         return difficulty_label(self.difficulty)
+
+    @property
+    def optimized_image_url(self):
+        return optimize_photo_url(self.image_url)
 
 
 class Equipment(models.Model):
