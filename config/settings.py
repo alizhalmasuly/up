@@ -10,7 +10,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env.local")
 load_dotenv(BASE_DIR / ".env")
 
-DEBUG = os.getenv("DEBUG", "True").lower() == "true"
+IS_VERCEL = os.getenv("VERCEL", "").lower() == "1"
+DEBUG = os.getenv("DEBUG", "False" if IS_VERCEL else "True").lower() == "true"
 
 SECRET_KEY = (
     os.getenv("SECRET_KEY")
@@ -133,6 +134,12 @@ DATABASE_URL = (
     os.getenv("DATABASE_URL")
     or os.getenv("POSTGRES_URL")
 )
+
+if IS_VERCEL and not DATABASE_URL:
+    raise ImproperlyConfigured(
+        "Vercel requires a persistent PostgreSQL database. "
+        "Set DATABASE_URL (or POSTGRES_URL) in the Vercel project environment."
+    )
 
 if DATABASE_URL:
     DATABASES = {
