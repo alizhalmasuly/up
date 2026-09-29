@@ -39,6 +39,12 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
+# Vercel's VERCEL_URL is the unique deployment URL, while visitors may use
+# the stable project alias (for example, up-qxch.vercel.app).
+VERCEL_PROJECT_URL = os.getenv("VERCEL_PROJECT_PRODUCTION_URL", "").strip()
+if VERCEL_PROJECT_URL and VERCEL_PROJECT_URL not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(VERCEL_PROJECT_URL)
+
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
@@ -58,6 +64,11 @@ if VERCEL_URL:
 
     if vercel_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(vercel_origin)
+
+if VERCEL_PROJECT_URL:
+    project_origin = f"https://{VERCEL_PROJECT_URL}"
+    if project_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(project_origin)
 
 
 INSTALLED_APPS = [
