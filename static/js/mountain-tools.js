@@ -279,18 +279,43 @@
     document.querySelectorAll('[data-gear-filter]').forEach((input) => {
       const list = input.closest('.gear-panel')?.querySelector('[data-gear-list]');
       if (!list) return;
+      const empty = input.closest('.gear-panel').querySelector('[data-gear-empty]');
       input.addEventListener('input', () => {
         const query = input.value.trim().toLocaleLowerCase();
+        let matches = 0;
         list.querySelectorAll('.gear-group').forEach((group) => {
           let visibleItems = 0;
           group.querySelectorAll('.gear-row').forEach((row) => {
             const visible = row.textContent.toLocaleLowerCase().includes(query);
             row.hidden = !visible;
-            if (visible) visibleItems += 1;
+            if (visible) {
+              visibleItems += 1;
+              matches += 1;
+            }
           });
           group.hidden = visibleItems === 0;
         });
+        if (empty) empty.hidden = matches !== 0;
       });
+    });
+    document.querySelectorAll('[data-check-progress]').forEach((progress) => {
+      const panel = progress.closest('.prep-layout')?.querySelector('.gear-panel');
+      if (!panel) return;
+      const rows = [...panel.querySelectorAll('.gear-row')];
+      const label = progress.querySelector('[data-progress-label]');
+      const count = progress.querySelector('[data-progress-count]');
+      const bar = progress.querySelector('[data-progress-bar]');
+      const track = progress.querySelector('[role="progressbar"]');
+      const update = () => {
+        const ready = rows.filter((row) => row.querySelector('input[value="have"]:checked')).length;
+        const percent = rows.length ? Math.round((ready / rows.length) * 100) : 0;
+        if (label) label.textContent = `${percent}%`;
+        if (count) count.textContent = `${ready} / ${rows.length}`;
+        if (bar) bar.style.width = `${percent}%`;
+        if (track) track.setAttribute('aria-valuenow', String(percent));
+      };
+      panel.addEventListener('change', update);
+      update();
     });
     document.querySelectorAll('[data-weather-widget]').forEach((widget) => {
       if (widget.dataset.latitude && widget.dataset.longitude) {
