@@ -263,82 +263,175 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('[data-route-search]').forEach((picker) => {
-      const input = picker.querySelector('[data-route-query]');
-      const mountainId = picker.querySelector('[data-route-id]');
-      const results = picker.querySelector('[data-route-results]');
-      const options = [...picker.querySelectorAll('[data-route-option]')];
-      const empty = picker.querySelector('[data-route-empty]');
-      const selected = picker.querySelector('[data-route-selected]');
-      const normalize = (value) => value.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      const select = (option) => {
-        mountainId.value = option.dataset.id;
-        input.value = option.dataset.name;
-        input.setCustomValidity('');
-        picker.querySelector('[data-route-selected-name]').textContent = `${option.dataset.name} · ${option.dataset.altitude} m`;
-        picker.querySelector('[data-route-selected-location]').textContent = option.dataset.location;
-        selected.hidden = false;
-        options.forEach((item) => item.setAttribute('aria-selected', String(item === option)));
-        results.hidden = true;
-        input.setAttribute('aria-expanded', 'false');
-      };
-      const filter = () => {
-        const query = normalize(input.value.trim());
-        if (!query) { results.hidden = true; input.setAttribute('aria-expanded', 'false'); return; }
-        let count = 0;
-        options.forEach((option) => {
-          option.hidden = !normalize(option.dataset.search).includes(query);
-          if (!option.hidden) count += 1;
+  function initPreparePlaceSearch(widget) {
+    const input = widget.querySelector('[data-place-query]');
+    const button = widget.querySelector('[data-place-submit]');
+    const status = widget.querySelector('[data-place-status]');
+    const results = widget.querySelector('[data-place-results]');
+    const hiddenValue = widget.querySelector('[data-place-value]');
+    const card = widget.querySelector('[data-place-card]');
+    const trailSection = widget.querySelector('[data-place-trails-section]');
+    const searchUrl = new URL(widget.dataset.searchEndpoint, window.location.origin);
+    const trailsUrl = new URL(widget.dataset.trailsEndpoint, window.location.origin);
+    let searchController;
+    let trailsController;
+    let requestId = 0;
+
+    const renderPlace = (place, isSearchResult = false) => {
+      hiddenValue.value = place.name || '';
+      input.value = place.name || '';
+      card.hidden = false;
+      widget.querySelector('[data-place-name]').textContent = place.name || '';
+      widget.querySelector('[data-place-location]').textContent = place.location || place.display_name || '—';
+      widget.querySelector('[data-place-coordinates]').textContent = `${Number(place.latitude).toFixed(5)}, ${Number(place.longitude).toFixed(5)}`;
+      const elevationRow = widget.querySelector('[data-place-elevation-row]');
+      elevationRow.hidden = place.elevation === null || place.elevation === undefined || place.elevation === '';
+      widget.querySelector('[data-place-elevation]').textContent = elevationRow.hidden ? '' : `${place.elevation} m`;
+      widget.querySelector('[data-place-type]').textContent = [place.category, place.kind].filter(Boolean).join(' · ') || '—';
+      const detail = place.description || place.display_name || `${place.kind || 'Place'} · OpenStreetMap`;
+      widget.querySelector('[data-place-description]').textContent = detail;
+      results.replaceChildren();
+      results.hidden = true;
+      input.setCustomValidity('');
+      trailsController?.abort();
+      loadNearbyTrails(place, requestId);
+      if (isSearchResult) refreshIcons();
+    };
+
+    const clearSelection = () => {
+      hiddenValue.value = '';
+      card.hidden = true;
+      trailSection.hidden = true;
+      widget.querySelector('[data-place-trails]').replaceChildren();
+    };
+
+    async function loadNearbyTrails(place, selectedRequest) {
+      const latitude = Number(place.latitude);
+      const longitude = Number(place.longitude);
+      if (!coordinateIsValid(latitude, longitude)) { trailSection.hidden = true; return; }
+      trailsController?.abort();
+      trailsController = new AbortController();
+      const trailStatus = widget.querySelector('[data-place-trails-status]');
+      const trailList = widget.querySelector('[data-place-trails]');
+      trailSection.hidden = false;
+      trailList.replaceChildren();
+      trailStatus.textContent = widget.dataset.trailsLoading;
+      const url = new URL(trailsUrl);
+      url.searchParams.set('lat', String(latitude));
+      url.searchParams.set('lon', String(longitude));
+      try {
+        const response = await fetch(url, { headers: { Accept: 'application/json' }, signal: trailsController.signal });
+        const data = await response.json();
+        if (selectedRequest !== requestId) return;
+        if (!response.ok) throw new Error(data.error || 'trails_unavailable');
+        const trails = data.trails || [];
+        trailStatus.textContent = trails.length ? `${trails.length} · ${data.attribution || 'OpenStreetMap'}` : widget.dataset.noTrailsLabel;
+        trails.forEach((trail) => appendText(trailList, 'li', '', trail.name || widget.dataset.trailsLabel));
+      } catch (error) {
+        if (error.name === 'AbortError' || selectedRequest !== requestId) return;
+        trailStatus.textContent = error.message === 'rate_limited' ? widget.dataset.rateLabel : widget.dataset.trailsError;
+      }
+    }
+
+    async function search() {
+      const query = input.value.trim();
+      const currentRequest = ++requestId;
+      searchController?.abort();
+      if (query.length < 3) { status.textContent = widget.dataset.minLabel; return; }
+      searchController = new AbortController();
+      clearSelection();
+      results.replaceChildren();
+      status.textContent = widget.dataset.loadingLabel;
+      button.disabled = true;
+      try {
+        const url = new URL(searchUrl);
+        url.searchParams.set('q', query);
+        const response = await fetch(url, { headers: { Accept: 'application/json' }, signal: searchController.signal });
+        const data = await response.json();
+        if (currentRequest !== requestId) return;
+        if (!response.ok) throw new Error(data.error || 'search_unavailable');
+        const places = data.results || [];
+        if (!places.length) { status.textContent = widget.dataset.emptyLabel; return; }
+        status.textContent = `${places.length} · ${data.source || 'OpenStreetMap'}`;
+        places.forEach((place, index) => {
+          const result = document.createElement('button');
+          result.type = 'button';
+          result.className = 'prepare-place-result';
+          result.setAttribute('role', 'option');
+          result.setAttribute('aria-selected', 'false');
+          result.dataset.placeIndex = String(index);
+          result.append(iconNode(place.is_peak ? 'mountain' : 'map-pin'));
+          const text = document.createElement('span');
+          appendText(text, 'strong', '', place.name);
+          appendText(text, 'small', '', place.location || place.display_name || '');
+          result.append(text);
+          const meta = document.createElement('span');
+          meta.className = 'prepare-place-result-meta';
+          appendText(meta, 'strong', '', place.elevation ? `${place.elevation} m` : (place.kind || ''));
+          appendText(meta, 'small', '', `${Number(place.latitude).toFixed(3)}, ${Number(place.longitude).toFixed(3)}`);
+          result.append(meta);
+          results.append(result);
+          result._place = place;
         });
-        empty.hidden = count > 0;
         results.hidden = false;
-        input.setAttribute('aria-expanded', 'true');
-      };
-      input.addEventListener('input', () => {
-        mountainId.value = '';
-        selected.hidden = true;
-        options.forEach((option) => option.setAttribute('aria-selected', 'false'));
-        input.setCustomValidity('');
-        filter();
-      });
-      input.addEventListener('focus', filter);
-      input.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') { results.hidden = true; input.setAttribute('aria-expanded', 'false'); }
-        if (event.key === 'ArrowDown' && !results.hidden) { event.preventDefault(); results.querySelector('[data-route-option]:not([hidden])')?.focus(); }
-      });
-      results.addEventListener('click', (event) => {
-        const option = event.target.closest('[data-route-option]');
-        if (option) select(option);
-      });
-      results.addEventListener('keydown', (event) => {
-        if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
-        const visible = options.filter((option) => !option.hidden);
-        const index = visible.indexOf(document.activeElement);
-        if (event.key === 'Enter' && index >= 0) { event.preventDefault(); select(visible[index]); return; }
-        event.preventDefault();
-        const next = event.key === 'ArrowDown' ? Math.min(visible.length - 1, index + 1) : Math.max(0, index - 1);
-        visible[next]?.focus();
-      });
-      picker.querySelector('[data-route-clear]')?.addEventListener('click', () => {
-        mountainId.value = ''; input.value = ''; selected.hidden = true;
-        options.forEach((option) => option.setAttribute('aria-selected', 'false'));
-        input.focus();
-      });
-      picker.closest('form')?.addEventListener('submit', (event) => {
-        if (!mountainId.value) {
-          event.preventDefault();
-          input.setCustomValidity(input.dataset.selectMessage || 'Select a route from the search results');
-          input.reportValidity();
-          input.focus();
-        }
-      });
-      const initial = options.find((option) => option.dataset.id === mountainId.value);
-      if (initial) select(initial);
-      document.addEventListener('click', (event) => {
-        if (!picker.contains(event.target)) { results.hidden = true; input.setAttribute('aria-expanded', 'false'); }
-      });
+        refreshIcons();
+      } catch (error) {
+        if (error.name === 'AbortError' || currentRequest !== requestId) return;
+        status.textContent = error.message === 'rate_limited' ? widget.dataset.rateLabel : widget.dataset.errorLabel;
+      } finally {
+        if (currentRequest === requestId) button.disabled = false;
+      }
+    }
+
+    button.addEventListener('click', search);
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') { event.preventDefault(); search(); }
+      if (event.key === 'Escape') results.hidden = true;
     });
+    input.addEventListener('input', () => {
+      requestId += 1;
+      searchController?.abort();
+      button.disabled = false;
+      clearSelection();
+      results.hidden = true;
+      status.textContent = widget.dataset.minLabel;
+    });
+    results.addEventListener('click', (event) => {
+      const result = event.target.closest('[data-place-index]');
+      if (!result?._place) return;
+      results.querySelectorAll('[aria-selected]').forEach((item) => item.setAttribute('aria-selected', 'false'));
+      result.setAttribute('aria-selected', 'true');
+      requestId += 1;
+      renderPlace(result._place, true);
+      status.textContent = '';
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+    widget.querySelector('[data-place-clear]')?.addEventListener('click', () => {
+      requestId += 1;
+      trailsController?.abort();
+      input.value = '';
+      clearSelection();
+      status.textContent = widget.dataset.minLabel;
+      input.focus();
+    });
+    widget.closest('form')?.addEventListener('submit', (event) => {
+      if (!hiddenValue.value.trim()) {
+        event.preventDefault();
+        input.setCustomValidity(widget.dataset.selectLabel);
+        input.reportValidity();
+        input.focus();
+      }
+    });
+
+    try {
+      const initial = JSON.parse(document.getElementById('prepare-initial-place')?.textContent || 'null');
+      if (initial) { requestId += 1; renderPlace(initial); status.textContent = ''; }
+      else if (hiddenValue.value) input.value = hiddenValue.value;
+    } catch { /* No preselected place. */ }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-prepare-place-search]').forEach(initPreparePlaceSearch);
     document.querySelectorAll('[data-mountain-filter]').forEach((input) => {
       const form = input.closest('form');
       const selectedMountain = form?.querySelector('[data-selected-mountain]');

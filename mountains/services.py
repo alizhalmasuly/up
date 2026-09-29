@@ -79,16 +79,23 @@ def search_mountains(query, language="en"):
         if not -90 <= latitude <= 90 or not -180 <= longitude <= 180:
             continue
         address = item.get("address") or {}
-        location = ", ".join(part for part in (address.get("state"), address.get("country")) if part)
+        locality = next((address.get(key) for key in ("city", "town", "village", "hamlet", "municipality") if address.get(key)), None)
+        location_parts = (locality, address.get("county"), address.get("state"), address.get("country"))
+        location = ", ".join(dict.fromkeys(part for part in location_parts if part))
+        display_name = item.get("display_name", "")
+        kind = item_type or category or "place"
         results.append({
             "id": f"{item.get('osm_type', 'node')}:{item.get('osm_id', '')}",
             "name": (item.get("namedetails") or {}).get("name") or item.get("name") or item.get("display_name", "").split(",")[0],
-            "location": location or item.get("display_name", ""),
+            "location": location or display_name,
+            "display_name": display_name,
+            "description": tags.get("description", ""),
             "latitude": latitude,
             "longitude": longitude,
             "elevation": _elevation(tags.get("ele")),
             "is_peak": category == "natural" and item_type in {"peak", "mountain", "volcano"},
-            "kind": item_type,
+            "kind": kind,
+            "category": category or "",
             "source": "OpenStreetMap",
         })
 

@@ -70,12 +70,22 @@ def toggle_saved(request, slug):
 @login_required
 def prepare(request):
     initial = {}
+    initial_place = None
     if request.method == "GET":
         mountain_slug = request.GET.get("mountain", "").strip()
         if mountain_slug:
             mountain = Mountain.objects.filter(slug=mountain_slug).first()
             if mountain:
-                initial["mountain"] = mountain.pk
+                initial["mountain"] = mountain.name
+                initial_place = {
+                    "name": mountain.name,
+                    "location": mountain.location,
+                    "latitude": mountain.latitude,
+                    "longitude": mountain.longitude,
+                    "elevation": mountain.altitude,
+                    "description": mountain.short_description,
+                    "kind": "mountain",
+                }
     form = PreparationForm(request.POST or None, initial=initial)
     equipment = Equipment.objects.all()
     if request.method == "POST":
@@ -89,4 +99,4 @@ def prepare(request):
     groups = {}
     for item in equipment:
         groups.setdefault(item.category, []).append(item)
-    return render(request, "mountains/prepare.html", {"form": form, "groups": groups, "checks": checks})
+    return render(request, "mountains/prepare.html", {"form": form, "groups": groups, "checks": checks, "initial_place": initial_place})

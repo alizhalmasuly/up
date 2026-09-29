@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
-{% load ui_tags %}
+{% load static ui_tags %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/prepare.css' %}">{% endblock %}
 {% block title %}{{ T.nav_prepare }} — UP!{% endblock %}
 {% block content %}
 <section class="simple-page-head"><div class="page-width"><p class="eyebrow">01 — BEFORE THE TRAIL</p><h1>{{ T.prepare_title }}</h1><p>{{ T.prepare_sub }}</p></div></section>
@@ -8,16 +9,21 @@
     <section class="prep-panel"><div class="panel-heading"><span class="panel-number">01</span><div><h2>{{ T.trip_plan }}</h2><p>{{ T.choose_mountain }}, {{ T.season|lower }}, {{ T.people|lower }}</p></div></div>
       {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
       <div class="plan-fields" data-prepare-form>
-        <div class="field-label route-search" data-route-search>
-          <label for="prepare-mountain-search">{{ T.choose_mountain }}</label>
-          <div class="route-search-box"><i data-lucide="search"></i><input id="prepare-mountain-search" type="search" placeholder="{{ T.world_search_placeholder }}" autocomplete="off" aria-controls="prepare-mountain-results" aria-expanded="false" data-route-query data-select-message="{{ T.choose_mountain }}"></div>
-          <input type="hidden" name="mountain" value="{{ form.mountain.value|default:'' }}" data-route-id>
-          <div class="route-search-results" id="prepare-mountain-results" role="listbox" aria-label="{{ T.choose_mountain }}" data-route-results hidden>
-            {% for mountain in form.fields.mountain.queryset %}<button type="button" class="route-search-result" role="option" aria-selected="false" data-route-option data-id="{{ mountain.pk }}" data-name="{{ mountain.name }}" data-location="{{ mountain.location }}" data-altitude="{{ mountain.altitude }}" data-search="{{ mountain.name }} {{ mountain.location }} {{ mountain.altitude }}"><strong>{{ mountain.name }}</strong><span>{{ mountain.location }} · {{ mountain.altitude }} m</span></button>{% endfor %}
-            <p class="route-search-empty" data-route-empty hidden>{{ T.world_search_none }}</p>
-          </div>
-          <div class="route-search-selected" data-route-selected hidden><i data-lucide="map-pin"></i><span><strong data-route-selected-name></strong><small data-route-selected-location></small></span><button type="button" data-route-clear aria-label="Clear selection">×</button></div>
+        <div class="prepare-place-search" data-prepare-place-search data-search-endpoint="{% url 'mountains:search_api' %}" data-trails-endpoint="{% url 'mountains:trails_api' %}" data-min-label="{{ T.prepare_place_min }}" data-loading-label="{{ T.prepare_place_loading }}" data-empty-label="{{ T.world_search_none }}" data-error-label="{{ T.world_search_error }}" data-rate-label="{{ T.world_search_rate }}" data-trails-label="{{ T.prepare_place_trails }}" data-trails-loading="{{ T.prepare_place_loading }}" data-trails-error="{{ T.map_error }}" data-no-trails-label="{{ T.prepare_place_no_trails }}" data-select-label="{{ T.choose_mountain }}">
+          <div class="prepare-place-heading"><span class="panel-number">⌖</span><div><h3>{{ T.prepare_place_title }}</h3><p>{{ T.prepare_place_min }}</p></div></div>
+          <label class="visually-hidden" for="prepare-place-query">{{ T.prepare_place_placeholder }}</label>
+          <div class="prepare-place-form"><i data-lucide="search"></i><input id="prepare-place-query" type="search" maxlength="120" placeholder="{{ T.prepare_place_placeholder }}" autocomplete="off" data-place-query><button type="button" class="button button-dark" data-place-submit>{{ T.prepare_place_find }}<i data-lucide="arrow-right"></i></button></div>
+          <p class="prepare-place-status" role="status" aria-live="polite" data-place-status>{{ T.prepare_place_min }}</p>
+          <div class="prepare-place-results" role="listbox" aria-label="{{ T.prepare_place_title }}" data-place-results></div>
+          <section class="prepare-place-card" aria-live="polite" data-place-card hidden>
+            <div class="prepare-place-card-head"><div><p class="eyebrow">{{ T.prepare_place_source }}</p><h3 data-place-name></h3></div><button type="button" class="prepare-place-clear" data-place-clear aria-label="{{ T.prepare_place_title }}">×</button></div>
+            <p class="prepare-place-description" data-place-description></p>
+            <dl class="prepare-place-facts"><div><dt>{{ T.prepare_place_location }}</dt><dd data-place-location></dd></div><div><dt>{{ T.map_coordinates }}</dt><dd data-place-coordinates></dd></div><div data-place-elevation-row hidden><dt>{{ T.altitude }}</dt><dd data-place-elevation></dd></div><div><dt>{{ T.prepare_place_type }}</dt><dd data-place-type></dd></div></dl>
+            <div class="prepare-place-trails" data-place-trails-section hidden><h4>{{ T.prepare_place_trails }}</h4><p data-place-trails-status></p><ul data-place-trails></ul></div>
+          </section>
+          <input type="hidden" name="mountain" value="{{ form.mountain.value|default:'' }}" data-place-value>
           {% if form.mountain.errors %}<span class="form-errors">{{ form.mountain.errors }}</span>{% endif %}
+          {{ initial_place|json_script:"prepare-initial-place" }}
         </div>
         <label class="field-label">{{ T.difficulty }}<select name="difficulty">{% for value,label in form.fields.difficulty.choices %}<option value="{{ value }}">{{ T|get_difficulty:value }}</option>{% endfor %}</select></label>
         <label class="field-label">{{ T.duration_hours }}<input type="number" name="duration_hours" min="1" max="48" value="5"></label>

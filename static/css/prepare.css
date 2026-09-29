@@ -1,0 +1,51 @@
+.prepare-place-search{grid-column:1/-1;min-width:0;padding:22px;background:#f4f6f0;border:1px solid #e1e7dc}
+.prepare-place-heading{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.prepare-place-heading .panel-number{font-size:19px}
+.prepare-place-heading h3{margin:0;font-family:var(--display);font-size:18px;font-weight:650}
+.prepare-place-heading p{margin:4px 0 0;color:#7c8980;font-size:10px;font-weight:400}
+.prepare-place-form{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;min-height:64px;padding:7px 8px 7px 17px;background:white;border:1px solid #dce2dc;box-shadow:0 5px 18px rgba(25,54,44,.05)}
+.prepare-place-form>svg{width:20px;color:#81934f}
+.prepare-place-form input{width:100%;min-width:0;height:48px;padding:8px 0;border:0;outline:0;background:transparent;color:var(--ink);font-size:16px}
+.prepare-place-form input::placeholder{color:#9aa49d}
+.prepare-place-form .button{min-height:48px;white-space:nowrap}
+.prepare-place-form .button svg{width:16px}
+.prepare-place-status{min-height:18px;margin:9px 1px 0;color:#758178;font-size:10px}
+.prepare-place-results{display:grid;gap:7px;margin-top:8px}
+.prepare-place-results:empty{display:none}
+.prepare-place-result{width:100%;min-width:0;display:flex;align-items:center;gap:12px;padding:13px 14px;text-align:left;background:#fff;border:1px solid #e0e6dd;cursor:pointer;transition:border-color .18s,background .18s}
+.prepare-place-result:hover,.prepare-place-result:focus-visible,.prepare-place-result[aria-selected=true]{outline:0;border-color:#839958;background:#fbfcf8}
+.prepare-place-result>svg{width:18px;flex:0 0 18px;color:#81934f}
+.prepare-place-result>span:nth-child(2){min-width:0;display:grid;gap:4px;flex:1}
+.prepare-place-result strong{overflow:hidden;color:#30463a;font-family:var(--display);font-size:13px;text-overflow:ellipsis;white-space:nowrap}
+.prepare-place-result small{overflow:hidden;color:#7c8980;font-size:9px;text-overflow:ellipsis;white-space:nowrap}
+.prepare-place-result-meta{display:grid;gap:4px;text-align:right;flex:0 0 auto}
+.prepare-place-result-meta strong{font-family:var(--sans);font-size:10px}
+.prepare-place-result-meta small{font-size:8px}
+.prepare-place-card{margin-top:15px;padding:19px;background:white;border:1px solid #dce4d8}
+.prepare-place-card[hidden]{display:none}
+.prepare-place-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.prepare-place-card-head .eyebrow{margin:0 0 5px;font-size:8px}
+.prepare-place-card-head h3{margin:0;font-family:var(--display);font-size:21px;line-height:1.25}
+.prepare-place-clear{width:30px;height:30px;flex:0 0 30px;border:0;background:#f1f3ed;color:#718078;font-size:21px;cursor:pointer}
+.prepare-place-description{margin:12px 0;color:#68766e;font-size:11px;line-height:1.6}
+.prepare-place-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0 0}
+.prepare-place-facts>div{min-width:0;padding:10px 12px;background:#f5f6f2}
+.prepare-place-facts dt{margin-bottom:5px;color:#859087;font-size:8px}
+.prepare-place-facts dd{overflow-wrap:anywhere;margin:0;color:#34483c;font-size:10px;font-weight:600}
+.prepare-place-trails{margin-top:15px;padding-top:13px;border-top:1px solid #edf0eb}
+.prepare-place-trails h4{margin:0 0 7px;font-family:var(--display);font-size:12px}
+.prepare-place-trails p{margin:0 0 6px;color:#758178;font-size:9px}
+.prepare-place-trails ul{display:grid;gap:5px;margin:0;padding-left:17px;color:#50624f;font-size:10px}
+@media(max-width:600px){
+  .prepare-place-search{padding:15px}
+  .prepare-place-heading h3{font-size:16px}
+  .prepare-place-form{grid-template-columns:auto minmax(0,1fr);gap:8px;padding:8px 10px 10px}
+  .prepare-place-form input{font-size:14px}
+  .prepare-place-form .button{grid-column:1/-1;width:100%}
+  .prepare-place-result{gap:8px;padding:11px 9px}
+  .prepare-place-result-meta small{display:none}
+  .prepare-place-card{padding:14px}
+  .prepare-place-card-head h3{font-size:18px}
+  .prepare-place-facts{grid-template-columns:1fr 1fr;gap:7px}
+  .prepare-place-facts>div{padding:8px}
+}

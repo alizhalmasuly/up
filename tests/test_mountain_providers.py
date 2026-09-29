@@ -4,8 +4,10 @@ from unittest.mock import patch
 from urllib.parse import parse_qs
 
 from django.core.cache import cache
-from django.test import SimpleTestCase, override_settings
+from django.contrib.auth import get_user_model
+from django.test import SimpleTestCase, TestCase, override_settings
 
+from mountains.forms import PreparationForm
 from mountains.services import get_nearby_trails, search_mountains
 
 
@@ -22,7 +24,7 @@ class MountainProviderTests(SimpleTestCase):
         response = [{
             "osm_type": "node", "osm_id": 123, "category": "natural", "type": "peak",
             "name": "Mount Example", "display_name": "Mount Example, Nepal", "lat": "27.9881", "lon": "86.9250",
-            "address": {"state": "Koshi", "country": "Nepal"}, "extratags": {"ele": "8848"},
+            "address": {"state": "Koshi", "country": "Nepal"}, "extratags": {"ele": "8848", "description": "A high mountain"},
         }]
         urlopen.return_value = BytesIO(json.dumps(response).encode())
 
@@ -32,9 +34,22 @@ class MountainProviderTests(SimpleTestCase):
         self.assertEqual(results[0]["location"], "Koshi, Nepal")
         self.assertEqual(results[0]["elevation"], 8848)
         self.assertEqual(results[0]["latitude"], 27.9881)
+        self.assertEqual(results[0]["description"], "A high mountain")
+        self.assertEqual(results[0]["display_name"], "Mount Example, Nepal")
         request = urlopen.call_args.args[0]
         self.assertIn("user-agent", {name.lower() for name in request.headers})
         self.assertIn("email=hiker%40example.test", request.full_url)
+
+    def test_preparation_form_accepts_places_outside_the_curated_mountain_list(self):
+        form = PreparationForm(data={
+            "mountain": "Big Almaty Lake",
+            "difficulty": "moderate",
+            "duration_hours": "5",
+            "season": "summer",
+            "people_count": "2",
+        })
+
+        self.assertTrue(form.is_valid(), form.errors)
 
     @override_settings(OVERPASS_API_URL="https://overpass.test/api/interpreter")
     @patch("mountains.services.urlopen")
@@ -72,3 +87,22 @@ class MountainEndpointTests(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         trails.assert_called_once_with(35.36, 138.73)
         self.assertEqual(self.client.get("/mountains/api/trails/?lat=91&lon=181").status_code, 400)
+
+
+@override_settings(STORAGES={
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+})
+class PreparationPageTests(TestCase):
+    def test_prepare_page_shows_place_search_without_curated_mountain_options(self):
+        user = get_user_model().objects.create_user(username="prepare-test", password="test-password")
+        self.client.force_login(user)
+
+        response = self.client.get("/mountains/prepare/")
+
+        self.assertEqual(response.status_code, 200)
+        page = response.content.decode()
+        self.assertIn("Введите место для похода...", page)
+        self.assertIn("Найти", page)
+        self.assertIn('data-prepare-place-search', page)
+        self.assertNotIn('data-route-option', page)
