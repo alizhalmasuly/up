@@ -11,7 +11,7 @@ load_dotenv(BASE_DIR / ".env.local")
 load_dotenv(BASE_DIR / ".env")
 
 IS_VERCEL = os.getenv("VERCEL", "").lower() == "1"
-DEBUG = os.getenv("DEBUG", "False" if IS_VERCEL else "True").lower() == "true"
+DEBUG = False if IS_VERCEL else os.getenv("DEBUG", "True").lower() == "true"
 
 SECRET_KEY = (
     os.getenv("SECRET_KEY")
