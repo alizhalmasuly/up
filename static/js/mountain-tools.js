@@ -265,17 +265,15 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-mountain-filter]').forEach((input) => {
-      const select = input.closest('[data-prepare-form]')?.querySelector('[data-mountain-options]');
-      if (!select) return;
+      const form = input.closest('form');
+      const selectedMountain = form?.querySelector('[data-selected-mountain]');
+      const options = input.list?.querySelectorAll('option') || [];
+      if (!selectedMountain || !options.length) return;
       input.addEventListener('input', () => {
-        const query = input.value.trim().toLocaleLowerCase();
-        let firstVisible = null;
-        select.querySelectorAll('option').forEach((option) => {
-          const visible = option.dataset.search.toLocaleLowerCase().includes(query) || option.textContent.toLocaleLowerCase().includes(query);
-          option.hidden = !visible;
-          if (visible && !firstVisible) firstVisible = option;
-        });
-        if (firstVisible && select.selectedOptions[0]?.hidden) select.value = firstVisible.value;
+        const value = input.value.trim().toLocaleLowerCase();
+        const match = [...options].find((option) => option.value.toLocaleLowerCase() === value);
+        selectedMountain.value = match?.dataset.id || '';
+        input.setCustomValidity(match ? '' : 'Выберите гору из списка');
       });
     });
     document.querySelectorAll('[data-gear-filter]').forEach((input) => {
