@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.http import JsonResponse
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 
 from community.models import Story
 
@@ -59,6 +59,7 @@ def mountain_detail(request, slug):
 
 
 @login_required
+@require_POST
 def toggle_saved(request, slug):
     mountain = get_object_or_404(Mountain, slug=slug)
     saved, created = SavedHike.objects.get_or_create(user=request.user, mountain=mountain)

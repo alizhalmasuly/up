@@ -11,7 +11,7 @@ load_dotenv(BASE_DIR / ".env.local")
 load_dotenv(BASE_DIR / ".env")
 
 IS_VERCEL = os.getenv("VERCEL", "").lower() == "1"
-DEBUG = False if IS_VERCEL else os.getenv("DEBUG", "True").lower() == "true"
+DEBUG = False if IS_VERCEL else os.getenv("DEBUG", "False").lower() == "true"
 
 SECRET_KEY = (
     os.getenv("SECRET_KEY")
@@ -35,7 +35,7 @@ ALLOWED_HOSTS = [
     host.strip()
     for host in os.getenv(
         "ALLOWED_HOSTS",
-        "localhost,127.0.0.1,testserver"
+        "localhost,127.0.0.1,testserver" if DEBUG else ""
     ).split(",")
     if host.strip()
 ]
@@ -70,6 +70,11 @@ if VERCEL_PROJECT_URL:
     project_origin = f"https://{VERCEL_PROJECT_URL}"
     if project_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(project_origin)
+
+if not DEBUG and (not ALLOWED_HOSTS or "*" in ALLOWED_HOSTS):
+    raise ImproperlyConfigured(
+        "Set explicit production hosts in ALLOWED_HOSTS; wildcard hosts are not allowed."
+    )
 
 
 INSTALLED_APPS = [
@@ -328,11 +333,20 @@ WEATHER_FORECAST_API_URL = os.getenv(
     "https://api.openweathermap.org/data/2.5/forecast"
 )
 
+OPEN_METEO_API_URL = os.getenv(
+    "OPEN_METEO_API_URL",
+    "https://api.open-meteo.com/v1/forecast"
+)
+
 
 # Security
 
 SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = "Lax"
 
 SECURE_SSL_REDIRECT = os.getenv(
     "SECURE_SSL_REDIRECT",
@@ -359,6 +373,8 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = (
     "strict-origin-when-cross-origin"
 )
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
+X_FRAME_OPTIONS = "DENY"
 
 
 # Authentication

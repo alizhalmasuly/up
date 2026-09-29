@@ -48,6 +48,8 @@
       }
       content.hidden = false;
       message.hidden = true;
+      const sourceLabel = widget.querySelector('[data-weather-source]');
+      if (sourceLabel) sourceLabel.textContent = data.source === 'open-meteo' ? 'Open-Meteo' : 'OpenWeather';
       widget.querySelector('[data-weather-condition]').textContent = data.condition;
       widget.querySelector('[data-weather-temperature]').textContent = data.temperature;
       widget.querySelector('[data-weather-feels]').textContent = data.feels_like;
