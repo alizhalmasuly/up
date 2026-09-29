@@ -1,0 +1,39 @@
+from django.db import migrations
+
+
+EQUIPMENT = [
+    ("\u0422\u0440\u0435\u043a\u043a\u0438\u043d\u0433\u043e\u0432\u044b\u0435 \u0431\u043e\u0442\u0438\u043d\u043a\u0438", "clothing"),
+    ("\u0412\u043e\u0434\u043e\u043d\u0435\u043f\u0440\u043e\u043d\u0438\u0446\u0430\u0435\u043c\u0430\u044f \u043a\u0443\u0440\u0442\u043a\u0430", "clothing"),
+    ("\u0422\u0435\u0440\u043c\u043e\u0431\u0435\u043b\u044c\u0451 \u0438\u043b\u0438 \u0442\u0451\u043f\u043b\u044b\u0439 \u0441\u043b\u043e\u0439", "clothing"),
+    ("\u041f\u0435\u0440\u0447\u0430\u0442\u043a\u0438 \u0438 \u0442\u0451\u043f\u043b\u0430\u044f \u0448\u0430\u043f\u043a\u0430", "clothing"),
+    ("\u041a\u0430\u0440\u0442\u0430 \u043c\u0430\u0440\u0448\u0440\u0443\u0442\u0430", "navigation"),
+    ("\u041a\u043e\u043c\u043f\u0430\u0441", "navigation"),
+    ("\u0422\u0435\u043b\u0435\u0444\u043e\u043d \u0441 GPS", "navigation"),
+    ("\u0412\u043e\u0434\u0430 (\u043d\u0435 \u043c\u0435\u043d\u0435\u0435 2 \u043b)", "food"),
+    ("\u0415\u0434\u0430 \u0434\u043b\u044f \u043c\u0430\u0440\u0448\u0440\u0443\u0442\u0430", "food"),
+    ("\u041f\u0435\u0440\u0435\u043a\u0443\u0441", "food"),
+    ("\u0410\u043f\u0442\u0435\u0447\u043a\u0430 \u043f\u0435\u0440\u0432\u043e\u0439 \u043f\u043e\u043c\u043e\u0449\u0438", "safety"),
+    ("\u0424\u043e\u043d\u0430\u0440\u0438\u043a \u0438 \u0437\u0430\u043f\u0430\u0441\u043d\u044b\u0435 \u0431\u0430\u0442\u0430\u0440\u0435\u0439\u043a\u0438", "safety"),
+    ("\u041f\u0430\u0443\u044d\u0440\u0431\u0430\u043d\u043a", "safety"),
+    ("\u0410\u0432\u0430\u0440\u0438\u0439\u043d\u044b\u0439 \u0441\u0432\u0438\u0441\u0442\u043e\u043a", "safety"),
+    ("\u041f\u0430\u043b\u0430\u0442\u043a\u0430", "camping"),
+    ("\u0421\u043f\u0430\u043b\u044c\u043d\u044b\u0439 \u043c\u0435\u0448\u043e\u043a", "camping"),
+    ("\u0422\u0443\u0440\u0438\u0441\u0442\u0438\u0447\u0435\u0441\u043a\u0438\u0439 \u043a\u043e\u0432\u0440\u0438\u043a", "camping"),
+]
+
+
+def add_default_equipment(apps, schema_editor):
+    Equipment = apps.get_model("mountains", "Equipment")
+    for sort_order, (name, category) in enumerate(EQUIPMENT, start=1):
+        Equipment.objects.get_or_create(
+            name=name,
+            category=category,
+            defaults={"essential": True, "sort_order": sort_order},
+        )
+
+
+class Migration(migrations.Migration):
+    dependencies = [("mountains", "0002_mountain_latitude_mountain_longitude")]
+
+    operations = [migrations.RunPython(add_default_equipment, migrations.RunPython.noop)]
+

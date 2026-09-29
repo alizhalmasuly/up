@@ -264,6 +264,36 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-mountain-filter]').forEach((input) => {
+      const select = input.closest('[data-prepare-form]')?.querySelector('[data-mountain-options]');
+      if (!select) return;
+      input.addEventListener('input', () => {
+        const query = input.value.trim().toLocaleLowerCase();
+        let firstVisible = null;
+        select.querySelectorAll('option').forEach((option) => {
+          const visible = option.dataset.search.toLocaleLowerCase().includes(query) || option.textContent.toLocaleLowerCase().includes(query);
+          option.hidden = !visible;
+          if (visible && !firstVisible) firstVisible = option;
+        });
+        if (firstVisible && select.selectedOptions[0]?.hidden) select.value = firstVisible.value;
+      });
+    });
+    document.querySelectorAll('[data-gear-filter]').forEach((input) => {
+      const list = input.closest('.gear-panel')?.querySelector('[data-gear-list]');
+      if (!list) return;
+      input.addEventListener('input', () => {
+        const query = input.value.trim().toLocaleLowerCase();
+        list.querySelectorAll('.gear-group').forEach((group) => {
+          let visibleItems = 0;
+          group.querySelectorAll('.gear-row').forEach((row) => {
+            const visible = row.textContent.toLocaleLowerCase().includes(query);
+            row.hidden = !visible;
+            if (visible) visibleItems += 1;
+          });
+          group.hidden = visibleItems === 0;
+        });
+      });
+    });
     document.querySelectorAll('[data-weather-widget]').forEach((widget) => {
       if (widget.dataset.latitude && widget.dataset.longitude) {
         loadWeather(widget, widget.dataset.latitude, widget.dataset.longitude, widget.dataset.location);

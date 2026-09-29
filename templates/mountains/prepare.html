@@ -7,8 +7,8 @@
   <div class="prep-main"><form method="post" class="prep-form">{% csrf_token %}
     <section class="prep-panel"><div class="panel-heading"><span class="panel-number">01</span><div><h2>{{ T.trip_plan }}</h2><p>{{ T.choose_mountain }}, {{ T.season|lower }}, {{ T.people|lower }}</p></div></div>
       {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
-      <div class="plan-fields">
-        <label class="field-label">{{ T.choose_mountain }}<select name="mountain" required>{% for mountain in form.fields.mountain.queryset %}<option value="{{ mountain.pk }}"{% if request.GET.mountain == mountain.slug %} selected{% endif %}>{{ mountain.name }} · {{ mountain.altitude }} m</option>{% endfor %}</select></label>
+      <div class="plan-fields" data-prepare-form>
+        <label class="field-label">{{ T.choose_mountain }}<input type="search" class="prepare-search" placeholder="{{ T.world_search_placeholder }}" autocomplete="off" data-mountain-filter><select name="mountain" required data-mountain-options>{% for mountain in form.fields.mountain.queryset %}<option value="{{ mountain.pk }}" data-search="{{ mountain.name }} {{ mountain.location }}"{% if request.GET.mountain == mountain.slug %} selected{% endif %}>{{ mountain.name }} — {{ mountain.altitude }} m</option>{% endfor %}</select></label>
         <label class="field-label">{{ T.difficulty }}<select name="difficulty">{% for value,label in form.fields.difficulty.choices %}<option value="{{ value }}">{{ T|get_difficulty:value }}</option>{% endfor %}</select></label>
         <label class="field-label">{{ T.duration_hours }}<input type="number" name="duration_hours" min="1" max="48" value="5"></label>
         <label class="field-label">{{ T.season }}<select name="season"><option value="spring">{{ T.spring }}</option><option value="summer" selected>{{ T.summer }}</option><option value="autumn">{{ T.autumn }}</option><option value="winter">{{ T.winter }}</option></select></label>
@@ -16,7 +16,8 @@
       </div>
     </section>
     <section class="prep-panel gear-panel"><div class="panel-heading"><span class="panel-number">02</span><div><h2>{{ T.gear_title }}</h2><p>{{ T.gear_sub }}</p></div></div>
-      <div class="gear-groups">
+      <label class="field-label gear-search-label">{{ T.gear_title }}<input type="search" class="prepare-search" placeholder="{{ T.world_search_placeholder }}" autocomplete="off" data-gear-filter></label>
+      <div class="gear-groups" data-gear-list>
         {% for category,items in groups.items %}<div class="gear-group"><h3>{% if category == 'clothing' %}{{ T.equipment_category_clothing }}{% elif category == 'navigation' %}{{ T.equipment_category_navigation }}{% elif category == 'food' %}{{ T.equipment_category_food }}{% elif category == 'safety' %}{{ T.equipment_category_safety }}{% else %}{{ T.equipment_category_camping }}{% endif %}</h3>
           {% for item in items %}<div class="gear-row"><span>{{ item.localized_name }}</span><div class="gear-options"><label class="gear-option"><input type="radio" name="gear_{{ item.id }}" value="have"{% if checks|get_item:item.id %} checked{% endif %}><span class="option-check"><i data-lucide="check"></i></span>{{ T.have_it }}</label><label class="gear-option"><input type="radio" name="gear_{{ item.id }}" value="need"{% if not checks|get_item:item.id %} checked{% endif %}><span class="option-circle"></span>{{ T.need_it }}</label></div></div>{% endfor %}
         </div>{% endfor %}
