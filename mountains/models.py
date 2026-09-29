@@ -1,7 +1,8 @@
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
 from django.conf import settings
 from django.db import models
 from django.utils.translation import get_language
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 
 def optimize_photo_url(url, width=1200):
