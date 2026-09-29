@@ -264,6 +264,76 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-route-picker]').forEach((picker) => {
+      const input = picker.querySelector('[data-mountain-filter]');
+      const selectedId = picker.querySelector('[data-selected-mountain]');
+      const results = picker.querySelector('[data-route-results]');
+      const options = [...picker.querySelectorAll('[data-route-option]')];
+      const selectedCard = picker.querySelector('[data-route-selected]');
+      const selectedName = picker.querySelector('[data-route-selected-name]');
+      const selectedLocation = picker.querySelector('[data-route-selected-location]');
+      const normalize = (value) => value.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const select = (option) => {
+        selectedId.value = option.dataset.id;
+        input.value = `${option.dataset.name} — ${option.dataset.altitude} m`;
+        selectedName.textContent = `${option.dataset.name} · ${option.dataset.altitude} m`;
+        selectedLocation.textContent = `${option.dataset.location} · ${option.dataset.difficulty}`;
+        selectedCard.hidden = false;
+        options.forEach((item) => item.setAttribute('aria-selected', String(item === option)));
+        results.hidden = true;
+        input.setAttribute('aria-expanded', 'false');
+        input.setCustomValidity('');
+      };
+      const filter = () => {
+        const query = normalize(input.value.trim());
+        let count = 0;
+        options.forEach((option) => {
+          const match = normalize(option.dataset.search).includes(query);
+          option.hidden = !match;
+          if (match) count += 1;
+        });
+        results.hidden = false;
+        input.setAttribute('aria-expanded', 'true');
+        input.setCustomValidity(selectedId.value ? '' : (input.dataset.selectMessage || 'Выберите маршрут из списка'));
+        let empty = results.querySelector('[data-route-empty]');
+        if (!empty) {
+          empty = document.createElement('p');
+          empty.className = 'route-picker-empty';
+          empty.dataset.routeEmpty = '';
+          empty.textContent = input.dataset.emptyMessage || 'Маршруты не найдены';
+          results.append(empty);
+        }
+        empty.hidden = count > 0;
+      };
+      input.addEventListener('focus', () => { results.hidden = false; input.setAttribute('aria-expanded', 'true'); });
+      input.addEventListener('input', () => { selectedId.value = ''; selectedCard.hidden = true; options.forEach((item) => item.setAttribute('aria-selected', 'false')); filter(); });
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') { results.hidden = true; input.setAttribute('aria-expanded', 'false'); }
+        if (event.key === 'ArrowDown') { event.preventDefault(); results.querySelector('[data-route-option]:not([hidden])')?.focus(); }
+      });
+      results.addEventListener('click', (event) => {
+        const option = event.target.closest('[data-route-option]');
+        if (option) select(option);
+      });
+      results.addEventListener('keydown', (event) => {
+        if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+        const visible = options.filter((option) => !option.hidden);
+        const index = visible.indexOf(document.activeElement);
+        visible[Math.max(0, Math.min(visible.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1)))]?.focus();
+      });
+      picker.querySelector('[data-route-clear]')?.addEventListener('click', () => {
+        selectedId.value = ''; input.value = ''; selectedCard.hidden = true; options.forEach((item) => item.setAttribute('aria-selected', 'false')); input.focus(); filter();
+      });
+      picker.closest('form')?.addEventListener('submit', (event) => {
+        if (!selectedId.value) { event.preventDefault(); input.setCustomValidity(input.dataset.selectMessage || 'Выберите маршрут из списка'); input.reportValidity(); input.focus(); }
+      });
+      const initial = options.find((option) => option.dataset.id === selectedId.value);
+      if (initial) select(initial);
+      else { results.hidden = true; }
+      document.addEventListener('click', (event) => {
+        if (!picker.contains(event.target)) { results.hidden = true; input.setAttribute('aria-expanded', 'false'); }
+      });
+    });
     document.querySelectorAll('[data-mountain-filter]').forEach((input) => {
       const form = input.closest('form');
       const selectedMountain = form?.querySelector('[data-selected-mountain]');

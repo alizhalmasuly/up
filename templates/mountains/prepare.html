@@ -8,7 +8,18 @@
     <section class="prep-panel"><div class="panel-heading"><span class="panel-number">01</span><div><h2>{{ T.trip_plan }}</h2><p>{{ T.choose_mountain }}, {{ T.season|lower }}, {{ T.people|lower }}</p></div></div>
       {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
       <div class="plan-fields" data-prepare-form>
-        <label class="field-label">{{ T.choose_mountain }}<input type="search" class="prepare-search" placeholder="{{ T.world_search_placeholder }}" autocomplete="off" list="prepare-mountain-options" data-mountain-filter required><input type="hidden" name="mountain" data-selected-mountain><datalist id="prepare-mountain-options">{% for mountain in form.fields.mountain.queryset %}<option value="{{ mountain.name }} — {{ mountain.altitude }} m" data-name="{{ mountain.name }}" data-id="{{ mountain.pk }}">{{ mountain.location }}</option>{% endfor %}</datalist></label>
+        <div class="field-label route-picker" data-route-picker>
+          <label for="prepare-mountain-search">{{ T.choose_mountain }}</label>
+          <div class="route-picker-search"><i data-lucide="search"></i><input id="prepare-mountain-search" type="search" class="prepare-search" placeholder="{{ T.world_search_placeholder }}" autocomplete="off" aria-controls="prepare-mountain-options" aria-expanded="false" data-mountain-filter></div>
+          <input type="hidden" name="mountain" value="{{ form.mountain.value|default:'' }}" data-selected-mountain>
+          <div class="route-picker-results" id="prepare-mountain-options" role="listbox" aria-label="{{ T.choose_mountain }}" data-route-results>
+            {% for mountain in form.fields.mountain.queryset %}<button type="button" class="route-picker-option" role="option" aria-selected="false" data-route-option data-id="{{ mountain.pk }}" data-name="{{ mountain.name }}" data-location="{{ mountain.location }}" data-altitude="{{ mountain.altitude }}" data-difficulty="{{ T|get_difficulty:mountain.difficulty }}" data-search="{{ mountain.name }} {{ mountain.location }} {{ mountain.altitude }}">
+              <span><strong>{{ mountain.name }}</strong><small>{{ mountain.location }}</small></span><span class="route-option-meta"><strong>{{ mountain.altitude }} m</strong><small>{{ T|get_difficulty:mountain.difficulty }}</small></span>
+            </button>{% empty %}<p class="route-picker-empty">{{ T.choose_mountain }}</p>{% endfor %}
+          </div>
+          <div class="route-picker-selected" data-route-selected hidden><i data-lucide="map-pin"></i><span><strong data-route-selected-name></strong><small data-route-selected-location></small></span><button type="button" data-route-clear aria-label="Clear selection">×</button></div>
+          {% if form.mountain.errors %}<div class="form-errors">{{ form.mountain.errors }}</div>{% endif %}
+        </div>
         <label class="field-label">{{ T.difficulty }}<select name="difficulty">{% for value,label in form.fields.difficulty.choices %}<option value="{{ value }}">{{ T|get_difficulty:value }}</option>{% endfor %}</select></label>
         <label class="field-label">{{ T.duration_hours }}<input type="number" name="duration_hours" min="1" max="48" value="5"></label>
         <label class="field-label">{{ T.season }}<select name="season"><option value="spring">{{ T.spring }}</option><option value="summer" selected>{{ T.summer }}</option><option value="autumn">{{ T.autumn }}</option><option value="winter">{{ T.winter }}</option></select></label>

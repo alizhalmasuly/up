@@ -69,7 +69,14 @@ def toggle_saved(request, slug):
 
 @login_required
 def prepare(request):
-    form = PreparationForm(request.POST or None)
+    initial = {}
+    if request.method == "GET":
+        mountain_slug = request.GET.get("mountain", "").strip()
+        if mountain_slug:
+            mountain = Mountain.objects.filter(slug=mountain_slug).first()
+            if mountain:
+                initial["mountain"] = mountain.pk
+    form = PreparationForm(request.POST or None, initial=initial)
     equipment = Equipment.objects.all()
     if request.method == "POST":
         if form.is_valid():
